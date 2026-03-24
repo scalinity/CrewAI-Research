@@ -109,11 +109,11 @@ export function CustomSelect({
         aria-haspopup="listbox"
         className={`
           flex items-center gap-1.5 w-full
-          bg-bg-primary border border-border rounded-lg px-2.5 py-1.5
-          text-[11px] font-mono text-text-muted
+          bg-bg-primary border border-border rounded px-2.5 py-1.5
+          text-[11px] font-mono text-text-secondary
           transition-colors cursor-pointer
-          hover:border-border-light hover:text-text-primary
-          focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary
+          hover:border-text-secondary/20 hover:text-text-primary
+          focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary
           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border
         `}
       >
@@ -121,7 +121,7 @@ export function CustomSelect({
         <span className="truncate flex-1 text-left">{selectedOption?.label ?? value}</span>
         <ChevronDown
           size={10}
-          className={`shrink-0 text-text-muted/50 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-text-secondary/50 transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -135,7 +135,7 @@ export function CustomSelect({
             transition={{ duration: 0.12 }}
             role="listbox"
             aria-label={ariaLabel}
-            className="absolute top-full left-0 right-0 mt-1 z-50 bg-bg-elevated border border-border-light rounded-lg shadow-xl shadow-black/40 overflow-hidden py-1 min-w-[160px]"
+            className="absolute top-full left-0 right-0 mt-1 z-50 bg-bg-panel border border-border rounded overflow-hidden py-1 min-w-[160px]"
           >
             {options.map((option, i) => {
               const isSelected = option.value === value;
@@ -151,18 +151,18 @@ export function CustomSelect({
                   className={`
                     flex items-center gap-2 w-full px-2.5 py-1.5 text-left text-[11px] font-mono
                     transition-colors
-                    ${isFocused ? "bg-accent-blue/10 text-text-primary" : "text-text-muted hover:text-text-primary"}
-                    ${isSelected ? "text-accent-blue" : ""}
+                    ${isFocused ? "bg-accent/10 text-text-primary" : "text-text-secondary hover:text-text-primary"}
+                    ${isSelected ? "text-accent" : ""}
                   `}
                 >
                   {option.icon && <span className="shrink-0" aria-hidden="true">{option.icon}</span>}
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{option.label}</div>
                     {option.description && (
-                      <div className="text-[9px] text-text-muted/50 truncate">{option.description}</div>
+                      <div className="text-[9px] text-text-secondary/50 truncate">{option.description}</div>
                     )}
                   </div>
-                  {isSelected && <Check size={12} className="shrink-0 text-accent-blue" aria-hidden="true" />}
+                  {isSelected && <Check size={12} className="shrink-0 text-accent" aria-hidden="true" />}
                 </button>
               );
             })}

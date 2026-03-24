@@ -78,7 +78,7 @@ export function RunControls({
         onChange={handleModelChange}
         disabled={isRunning}
         ariaLabel="Select AI model"
-        icon={<Cpu size={11} className="text-accent-blue/60" />}
+        icon={<Cpu size={11} className="text-accent/60" />}
         width="160px"
       />
 
@@ -98,7 +98,7 @@ export function RunControls({
         <button
           onClick={onCancelRun}
           aria-label="Cancel running crew"
-          className="flex items-center gap-1.5 bg-accent-rose/20 text-accent-rose rounded-lg px-3 py-1.5 text-[12px] font-display font-medium hover:bg-accent-rose/30 transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-accent-rose focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+          className="flex items-center gap-1.5 bg-error/20 text-error rounded px-3 py-1.5 text-[12px] font-display font-medium hover:bg-error/30 transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         >
           <Loader2 size={14} className="animate-spin" aria-hidden="true" />
           Cancel
@@ -108,7 +108,7 @@ export function RunControls({
           onClick={handleSubmit}
           disabled={!topic.trim()}
           aria-label="Start crew run"
-          className="flex items-center gap-1.5 bg-accent-blue rounded-lg px-3 py-1.5 text-[12px] font-display font-medium text-bg-primary hover:bg-accent-blue/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+          className="flex items-center gap-1.5 bg-accent rounded px-3 py-1.5 text-[12px] font-display font-medium text-bg-primary hover:bg-accent/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         >
           <Play size={14} aria-hidden="true" />
           Run Crew

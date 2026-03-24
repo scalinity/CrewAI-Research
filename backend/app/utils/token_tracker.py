@@ -7,7 +7,7 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     # OpenAI GPT-5.4 family
     "gpt-5.4":      (2.50, 15.00),
     "gpt-5.4-mini": (0.75, 4.50),
-    "gpt-5.4-nano": (0.30, 1.50),
+    "gpt-5.4-nano": (0.20, 1.25),
     # Anthropic Claude 4 family
     "claude-opus-4-6":   (5.00, 25.00),
     "claude-sonnet-4-6": (3.00, 15.00),

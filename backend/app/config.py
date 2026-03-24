@@ -24,12 +24,13 @@ THINKING_MAP = {
         "high": {"reasoning_effort": "high"},
         "max": {"reasoning_effort": "xhigh"},
     },
+    # Claude 4.6: adaptive thinking + output_config.effort (budget_tokens is deprecated)
     "anthropic": {
         "off": {},
-        "low": {"thinking": {"type": "enabled", "budget_tokens": 2048}},
-        "medium": {"thinking": {"type": "enabled", "budget_tokens": 8192}},
-        "high": {"thinking": {"type": "enabled", "budget_tokens": 16384}},
-        "max": {"thinking": {"type": "adaptive"}},
+        "low": {"thinking": {"type": "adaptive"}, "output_config": {"effort": "low"}},
+        "medium": {"thinking": {"type": "adaptive"}, "output_config": {"effort": "medium"}},
+        "high": {"thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}},
+        "max": {"thinking": {"type": "adaptive"}, "output_config": {"effort": "max"}},  # Opus 4.6 only
     },
     "google": {
         "off": {},

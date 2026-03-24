@@ -5,19 +5,19 @@ import { formatTimestamp, truncateText } from "@/utils/formatters";
 import { ToolCallDetail } from "./ToolCallDetail";
 
 const AGENT_COLORS: Record<number, string> = {
-  0: "text-accent-blue",
+  0: "text-accent",
   1: "text-accent-purple",
-  2: "text-accent-emerald",
+  2: "text-success",
 };
 
 const TYPE_BADGES: Record<string, { label: string; style: string }> = {
-  thought:       { label: "Thinking",   style: "bg-accent-blue/20 text-accent-blue" },
-  tool_call:     { label: "Tool Call",  style: "bg-accent-amber/20 text-accent-amber" },
-  tool_result:   { label: "Result",     style: "bg-accent-emerald/20 text-accent-emerald" },
-  task_complete: { label: "Task Done",  style: "bg-accent-emerald/20 text-accent-emerald" },
+  thought:       { label: "Thinking",   style: "bg-accent/20 text-accent" },
+  tool_call:     { label: "Tool Call",  style: "bg-warning/20 text-warning" },
+  tool_result:   { label: "Result",     style: "bg-success/20 text-success" },
+  task_complete: { label: "Task Done",  style: "bg-success/20 text-success" },
   delegation:    { label: "Delegate",   style: "bg-accent-purple/20 text-accent-purple" },
-  error:         { label: "Error",      style: "bg-accent-rose/20 text-accent-rose" },
-  agent_start:   { label: "Started",    style: "bg-accent-blue/15 text-accent-blue" },
+  error:         { label: "Error",      style: "bg-error/20 text-error" },
+  agent_start:   { label: "Started",    style: "bg-accent/15 text-accent" },
 };
 
 // Memoized: ThoughtEntry props are immutable once created (data comes from reducer).
@@ -30,7 +30,7 @@ export const ThoughtEntry = memo(function ThoughtEntry({
   agentIndex: number;
 }) {
   const badge = TYPE_BADGES[entry.type] ?? TYPE_BADGES.thought;
-  const agentColor = AGENT_COLORS[agentIndex % 3] ?? "text-text-muted";
+  const agentColor = AGENT_COLORS[agentIndex % 3] ?? "text-text-secondary";
   const isToolType = entry.type === "tool_call" || entry.type === "tool_result";
 
   return (
@@ -38,9 +38,9 @@ export const ThoughtEntry = memo(function ThoughtEntry({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15 }}
-      className="flex gap-2 py-1.5 px-3 hover:bg-bg-elevated/50 rounded transition-colors"
+      className="flex gap-2 py-1.5 px-3 hover:bg-bg-panel/50 rounded transition-colors"
     >
-      <span className="font-mono text-[10px] text-text-muted/60 shrink-0 pt-0.5 w-[52px]">
+      <span className="font-mono text-[10px] text-text-secondary/60 shrink-0 pt-0.5 w-[52px]">
         {formatTimestamp(entry.timestamp)}
       </span>
 

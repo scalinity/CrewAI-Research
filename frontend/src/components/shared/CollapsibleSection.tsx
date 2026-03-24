@@ -18,7 +18,7 @@ export function CollapsibleSection({
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent-blue rounded"
+        className="flex items-center gap-1 text-[11px] text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent rounded"
       >
         <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.15 }}>
           <ChevronRight size={12} />

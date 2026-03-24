@@ -18,11 +18,13 @@ MAX_HISTORY_ENTRIES = 20
 
 ALLOWED_MODELS = {
     "openai/gpt-5.4-mini",
-    "openai/o3-mini",
-    "anthropic/claude-sonnet-4-6",
+    "openai/gpt-5.4-nano",
+    "openai/gpt-5.4",
     "anthropic/claude-opus-4-6",
-    "google/gemini-2.5-flash",
-    "google/gemini-2.5-pro",
+    "anthropic/claude-sonnet-4-6",
+    "google/gemini-3.1-pro-preview",
+    "google/gemini-3-flash-preview",
+    "google/gemini-3.1-flash-lite-preview",
 }
 
 ALLOWED_THINKING_LEVELS = {"off", "low", "medium", "high", "max"}

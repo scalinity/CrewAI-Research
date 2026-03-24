@@ -23,7 +23,7 @@ export function TopicInput({
         disabled={disabled}
         placeholder="Enter a topic to research..."
         aria-label="Research topic"
-        className="w-full bg-bg-primary border border-border rounded-lg px-3 py-1.5 text-[13px] font-display text-text-primary placeholder:text-text-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 transition-colors"
+        className="w-full bg-bg-primary border border-border rounded px-3 py-1.5 text-[13px] font-display text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 transition-colors"
         list="topic-presets"
       />
       <datalist id="topic-presets">

@@ -5,11 +5,11 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { truncateText } from "@/utils/formatters";
 
 const BORDER_COLOR: Record<string, string> = {
-  idle: "border-l-text-muted/30",
-  thinking: "border-l-accent-blue",
-  tool_call: "border-l-accent-amber",
-  done: "border-l-accent-emerald",
-  error: "border-l-accent-rose",
+  idle: "border-l-text-secondary/30",
+  thinking: "border-l-accent",
+  tool_call: "border-l-warning",
+  done: "border-l-success",
+  error: "border-l-error",
 };
 
 export function AgentCard({ agent }: { agent: AgentState }) {
@@ -20,7 +20,7 @@ export function AgentCard({ agent }: { agent: AgentState }) {
     <motion.article
       layout
       aria-label={`Agent: ${agent.name}, status: ${agent.status}`}
-      className={`rounded-lg border border-border border-l-2 ${borderClass} bg-bg-surface p-3 ${dimmed}`}
+      className={`rounded border border-border border-l-[3px] ${borderClass} bg-bg-secondary p-3 ${dimmed}`}
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -35,12 +35,12 @@ export function AgentCard({ agent }: { agent: AgentState }) {
 
       {agent.currentTool && (
         <div className="mt-1.5 flex items-center gap-1">
-          <span className="text-[10px] text-accent-amber font-mono">{agent.currentTool}</span>
+          <span className="text-[10px] text-warning font-mono">{agent.currentTool}</span>
         </div>
       )}
 
       {agent.lastThought && (
-        <p className="mt-1.5 text-[11px] text-text-muted italic font-mono leading-relaxed truncate">
+        <p className="mt-1.5 text-[11px] text-text-secondary italic font-mono leading-relaxed truncate">
           {truncateText(agent.lastThought, 80)}
         </p>
       )}

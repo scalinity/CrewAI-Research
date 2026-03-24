@@ -12,7 +12,7 @@ export function DashboardShell({
   rightSidebar: ReactNode;
 }) {
   return (
-    <div className="h-screen flex flex-col bg-bg-primary bg-grid overflow-hidden min-w-[760px]">
+    <div className="h-screen flex flex-col bg-bg-primary overflow-hidden min-w-[760px]">
       {header}
       <div className="flex-1 grid grid-cols-[240px_1fr_260px] overflow-hidden">
         <aside aria-label="Agents" className="border-r border-border overflow-y-auto">
