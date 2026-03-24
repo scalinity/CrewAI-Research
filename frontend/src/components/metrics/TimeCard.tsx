@@ -20,8 +20,8 @@ export function TimeCard({ metrics, crewStatus }: { metrics: MetricsState; crewS
     : metrics.durationMs;
 
   return (
-    <div className="bg-bg-surface rounded-lg border border-border p-3">
-      <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1 font-mono">Time</div>
+    <div className="bg-bg-secondary rounded border border-border border-l-[3px] border-l-accent p-3">
+      <div className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 font-mono">Time</div>
       <div className="text-2xl font-display font-bold text-text-primary">
         {formatDuration(elapsed)}
       </div>

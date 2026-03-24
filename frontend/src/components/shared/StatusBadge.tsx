@@ -3,13 +3,13 @@ import type { AgentStatus, CrewStatus } from "@/types/events";
 type Status = AgentStatus | CrewStatus;
 
 const STATUS_STYLES: Record<string, string> = {
-  idle: "bg-text-muted/20 text-text-muted",
-  thinking: "bg-accent-blue/20 text-accent-blue",
-  tool_call: "bg-accent-amber/20 text-accent-amber",
-  done: "bg-accent-emerald/20 text-accent-emerald",
-  complete: "bg-accent-emerald/20 text-accent-emerald",
-  error: "bg-accent-rose/20 text-accent-rose",
-  running: "bg-accent-blue/20 text-accent-blue",
+  idle: "bg-text-secondary/20 text-text-secondary",
+  thinking: "bg-accent/20 text-accent",
+  tool_call: "bg-warning/20 text-warning",
+  done: "bg-success/20 text-success",
+  complete: "bg-success/20 text-success",
+  error: "bg-error/20 text-error",
+  running: "bg-accent/20 text-accent",
 };
 
 const STATUS_LABELS: Record<string, string> = {

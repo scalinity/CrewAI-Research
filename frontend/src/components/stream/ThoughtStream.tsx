@@ -34,14 +34,14 @@ export function ThoughtStream({ thoughts }: { thoughts: ThoughtEntryData[] }) {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto scanlines relative"
+      className="flex-1 overflow-y-auto relative"
       role="log"
       aria-label="Agent thought stream"
       aria-live="polite"
     >
       {thoughts.length === 0 && (
         <div className="flex items-center justify-center h-full">
-          <p className="text-text-muted/60 text-[13px] font-display">
+          <p className="text-text-secondary/60 text-[13px] font-display">
             Waiting for agent activity...
           </p>
         </div>
@@ -55,7 +55,7 @@ export function ThoughtStream({ thoughts }: { thoughts: ThoughtEntryData[] }) {
             {showSeparator && lastAgent && (
               <div className="flex items-center gap-2 px-3 py-1 mt-1">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[9px] text-text-muted/60 uppercase tracking-wider font-display">
+                <span className="text-[9px] text-text-secondary/60 uppercase tracking-wider font-display">
                   {entry.agent_name}
                 </span>
                 <div className="flex-1 h-px bg-border" />

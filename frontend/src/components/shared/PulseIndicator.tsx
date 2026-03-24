@@ -1,11 +1,11 @@
 import type { AgentStatus } from "@/types/events";
 
 const COLOR_MAP: Record<string, string> = {
-  idle: "bg-text-muted",
-  thinking: "bg-accent-blue",
-  tool_call: "bg-accent-amber",
-  done: "bg-accent-emerald",
-  error: "bg-accent-rose",
+  idle: "bg-text-secondary",
+  thinking: "bg-accent",
+  tool_call: "bg-warning",
+  done: "bg-success",
+  error: "bg-error",
 };
 
 const ANIM_MAP: Record<string, string> = {
