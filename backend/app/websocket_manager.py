@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
@@ -28,14 +29,18 @@ class RunState:
     recent_thoughts: deque[dict] = field(default_factory=lambda: deque(maxlen=MAX_RECENT_THOUGHTS))
 
     def to_snapshot(self) -> RunStateSnapshot:
-        thoughts = list(self.recent_thoughts)
+        # Only materialize the last SNAPSHOT_THOUGHTS_LIMIT items from the deque
+        # instead of copying all MAX_RECENT_THOUGHTS then slicing.
+        n = len(self.recent_thoughts)
+        start = max(0, n - SNAPSHOT_THOUGHTS_LIMIT)
+        thoughts = [self.recent_thoughts[i] for i in range(start, n)]
         return RunStateSnapshot(
             run_id=self.run_id,
             status=self.status,
             agents=self.agents,
             tasks=self.tasks,
             metrics=self.metrics,
-            recent_thoughts=thoughts[-SNAPSHOT_THOUGHTS_LIMIT:],
+            recent_thoughts=thoughts,
             topic=self.topic,
         )
 
@@ -49,6 +54,7 @@ class ConnectionManager:
         self.event_queue: asyncio.Queue[BaseEvent] = asyncio.Queue(maxsize=self.MAX_QUEUE_SIZE)
         self._loop: asyncio.AbstractEventLoop | None = None
         self.run_state = RunState()
+        self._run_state_lock = threading.Lock()
         self._event_logger: EventLogger | None = None
         self._background_tasks: list[asyncio.Task] = []
 
@@ -137,23 +143,25 @@ class ConnectionManager:
         metrics: dict | None = None,
         thought: dict | None = None,
     ) -> None:
-        if status is not None:
-            self.run_state.status = status
-        if run_id is not None:
-            self.run_state.run_id = run_id
-        if topic is not None:
-            self.run_state.topic = topic
-        if agents is not None:
-            self.run_state.agents = agents
-        if tasks is not None:
-            self.run_state.tasks = tasks
-        if metrics is not None:
-            self.run_state.metrics = metrics
-        if thought is not None:
-            self.run_state.recent_thoughts.append(thought)
+        with self._run_state_lock:
+            if status is not None:
+                self.run_state.status = status
+            if run_id is not None:
+                self.run_state.run_id = run_id
+            if topic is not None:
+                self.run_state.topic = topic
+            if agents is not None:
+                self.run_state.agents = agents
+            if tasks is not None:
+                self.run_state.tasks = tasks
+            if metrics is not None:
+                self.run_state.metrics = metrics
+            if thought is not None:
+                self.run_state.recent_thoughts.append(thought)
 
     def reset_run_state(self) -> None:
-        self.run_state = RunState()
+        with self._run_state_lock:
+            self.run_state = RunState()
 
     def start_background_tasks(self) -> None:
         pump = asyncio.create_task(self.event_pump(), name="event_pump")

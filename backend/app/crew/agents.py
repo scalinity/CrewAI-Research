@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Callable
 
 from crewai import Agent, LLM
@@ -12,13 +13,23 @@ def create_agents(
     tools: list,
     step_callback_factory: Callable[[str], Callable],
 ) -> tuple[Agent, Agent, Agent]:
+    today = date.today().strftime("%B %d, %Y")
     researcher = Agent(
         role="Senior Research Analyst",
-        goal="Find and synthesize high-quality, recent information on the given topic",
+        goal=(
+            "Use your search tools to find current, real-time information on the given topic. "
+            "You MUST call the SerperDevTool at least 2-3 times to gather recent sources. "
+            "Never answer from memory alone — always search first."
+        ),
         backstory=(
-            "You are a methodical research analyst with 15 years of experience. "
-            "You always verify claims across multiple sources and identify knowledge gaps. "
-            "You prioritize recent, authoritative sources and present findings with clear citations."
+            f"Today's date is {today}. You are a methodical research analyst who ALWAYS "
+            "searches the web before writing anything. You never rely on prior knowledge — you "
+            "verify every claim with a live web search. When searching, always include the current "
+            "year in your queries to get the most recent results. Prioritize sources from the last "
+            "3 months over older material. Your workflow: 1) Search for the topic with the current "
+            "year, 2) Search for specific subtopics, 3) Optionally scrape key pages for details, "
+            "4) Synthesize findings with URLs. Discard results older than 6 months unless they "
+            "are foundational references."
         ),
         tools=tools,
         llm=llm,

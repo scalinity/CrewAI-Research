@@ -30,7 +30,7 @@ export function PipelineStep({ task, isLast }: { task: TaskState; isLast: boolea
         <span className={`text-[10px] font-display font-medium ${isActive ? "text-text-primary" : "text-text-secondary"}`}>
           {task.description}
         </span>
-        <span className="text-[9px] text-text-secondary/60 truncate max-w-[80px]">{task.agent.split(" ").pop()}</span>
+        <span className="text-[9px] text-text-secondary truncate max-w-[80px]">{task.agent.split(" ").pop()}</span>
       </div>
       {!isLast && (
         <div className={`w-8 h-[2px] mx-1 mt-[-18px] ${isDone ? "bg-success/40" : "bg-border"} ${isPending ? "opacity-40" : ""}`} />

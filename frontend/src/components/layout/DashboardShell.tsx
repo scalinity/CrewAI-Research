@@ -14,7 +14,7 @@ export function DashboardShell({
   return (
     <div className="h-screen flex flex-col bg-bg-primary overflow-hidden min-w-[760px]">
       {header}
-      <div className="flex-1 grid grid-cols-[240px_1fr_260px] overflow-hidden">
+      <div className="flex-1 grid grid-cols-[240px_1fr_260px] dashboard-grid overflow-hidden">
         <aside aria-label="Agents" className="border-r border-border overflow-y-auto">
           {leftSidebar}
         </aside>

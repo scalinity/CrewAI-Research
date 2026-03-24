@@ -25,7 +25,7 @@ export function TokenCard({ metrics, agents }: { metrics: MetricsState; agents: 
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="mt-1.5 text-[9px] text-text-secondary/60">
+      <div className="mt-1.5 text-[9px] text-text-secondary">
         {agents.filter(a => a.tokensUsed > 0).map((a) => (
           <span key={a.name} className="mr-2">
             {a.name.split(" ").pop()}: {formatTokens(a.tokensUsed)}

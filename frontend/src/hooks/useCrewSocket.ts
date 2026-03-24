@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ConnectionStatus, CrewEvent } from "@/types/events";
+import { API_BASE } from "@/utils/api";
 
 const WS_URL = window.location.protocol === "file:"
   ? "ws://localhost:8000/ws"
@@ -81,7 +82,7 @@ export function useCrewSocket(onEvent: (event: CrewEvent) => void) {
   }, []);
 
   const startRun = useCallback(async (topic: string, model?: string, thinkingLevel?: string) => {
-    const res = await fetch("/api/run", {
+    const res = await fetch(`${API_BASE}/api/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ topic, model: model || undefined, thinking_level: thinkingLevel || "off" }),
@@ -94,7 +95,7 @@ export function useCrewSocket(onEvent: (event: CrewEvent) => void) {
   }, []);
 
   const cancelRun = useCallback(async () => {
-    const res = await fetch("/api/cancel", { method: "POST" });
+    const res = await fetch(`${API_BASE}/api/cancel`, { method: "POST" });
     if (!res.ok) {
       const body = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(body.detail || `Cancel failed: ${res.status}`);

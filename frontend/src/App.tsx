@@ -35,13 +35,28 @@ export default function App() {
     (topic: string, model: string, thinkingLevel: string) => {
       dispatch({ type: "RESET" });
       setActiveModel(model);
-      startRun(topic, model, thinkingLevel);
+      startRun(topic, model, thinkingLevel).catch((err) => {
+        console.error("Failed to start run:", err);
+        dispatch({
+          type: "CREW_EVENT",
+          event: {
+            type: "error",
+            timestamp: Date.now() / 1000,
+            run_id: "",
+            agent_name: null,
+            error_message: err.message || "Failed to start run",
+            error_type: "StartError",
+          },
+        });
+      });
     },
     [dispatch, startRun]
   );
 
   const handleCancelRun = useCallback(() => {
-    cancelRun();
+    cancelRun().catch((err) => {
+      console.error("Failed to cancel run:", err);
+    });
   }, [cancelRun]);
 
   return (
@@ -58,7 +73,7 @@ export default function App() {
       center={
         <>
           <TaskPipeline tasks={state.tasks} />
-          <ThoughtStream thoughts={state.thoughts} />
+          <ThoughtStream thoughts={state.thoughts} finalOutput={state.finalOutput} crewStatus={state.crewStatus} />
         </>
       }
       rightSidebar={

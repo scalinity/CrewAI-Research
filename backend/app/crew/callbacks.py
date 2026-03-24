@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from typing import TYPE_CHECKING, Callable
 
@@ -20,9 +21,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Truncation limits for event payloads
-PREVIEW_MAX_LEN = 200
-RESULT_PREVIEW_MAX_LEN = 500
-FALLBACK_TEXT_MAX_LEN = 1000
+PREVIEW_MAX_LEN = 300
+RESULT_PREVIEW_MAX_LEN = 2000
+FALLBACK_TEXT_MAX_LEN = 2000
+
+
+class CrewCancelledError(Exception):
+    """Raised inside the CrewAI worker thread when cancellation is requested."""
 
 
 def make_step_callback_factory(
@@ -30,16 +35,25 @@ def make_step_callback_factory(
     run_id: str,
     token_tracker: TokenTracker,
     task_start_times: dict[str, float] | None = None,
+    pre_started_agents: set[str] | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> Callable[[str], Callable]:
-    seen_agents: set[str] = set()
+    seen_agents: set[str] = set(pre_started_agents) if pre_started_agents else set()
     task_descriptions: dict[str, str] = {}
     if task_start_times is None:
         task_start_times = {}
 
     def factory(agent_name: str) -> Callable:
         def step_callback(step_output: object) -> None:
+            # Check cooperative cancellation before processing each step.
+            # This runs inside the CrewAI worker thread between LLM calls,
+            # so raising here aborts crew.kickoff() from within the thread.
+            if cancel_event is not None and cancel_event.is_set():
+                raise CrewCancelledError("Crew execution cancelled by user")
             try:
                 _handle_step(step_output, agent_name, manager, run_id, token_tracker, seen_agents, task_descriptions, task_start_times)
+            except CrewCancelledError:
+                raise
             except Exception as e:
                 logger.exception("Error in step_callback for %s: %s", agent_name, e)
 
@@ -72,10 +86,32 @@ def _handle_step(
         )
         manager.update_run_state(thought={"type": "agent_start", "agent_name": agent_name})
 
-    thought = getattr(step_output, "thought", None) or getattr(step_output, "log", None)
+    # Log step_output shape for debugging callback shapes
+    if logger.isEnabledFor(logging.DEBUG):
+        attrs = list(vars(step_output).keys()) if hasattr(step_output, "__dict__") else "no __dict__"
+        logger.debug("STEP type=%s attrs=%s", type(step_output).__name__, attrs)
+
+    # Extract fields — use getattr with None sentinel, not falsy check,
+    # because empty string '' is a valid value from AgentFinish.thought
+    # CrewAI sets thought="Failed to parse LLM response" when the output doesn't match
+    # its expected format — this is an internal parser message, not an actual thought.
+    CREWAI_PARSE_NOISE = {"Failed to parse LLM response", ""}
+    raw_thought = getattr(step_output, "thought", None)
+    raw_log = getattr(step_output, "log", None)
+    thought = raw_thought if raw_thought not in (None, *CREWAI_PARSE_NOISE) else (raw_log if raw_log not in (None, *CREWAI_PARSE_NOISE) else None)
+
     tool = getattr(step_output, "tool", None)
     tool_input = getattr(step_output, "tool_input", None)
     result = getattr(step_output, "result", None)
+
+    # AgentFinish has 'output' or 'return_values' instead of 'result'/'thought'
+    output = getattr(step_output, "output", None)
+    return_values = getattr(step_output, "return_values", None)
+    if output in (None, "") and return_values:
+        if isinstance(return_values, dict):
+            output = return_values.get("output", str(return_values))
+        else:
+            output = str(return_values)
 
     if tool and result is not None:
         event = ToolResultEvent(
@@ -103,15 +139,36 @@ def _handle_step(
         manager.update_run_state(
             thought={"type": "thought", "agent_name": agent_name, "preview": str(thought)[:PREVIEW_MAX_LEN]}
         )
-    else:
-        text = str(step_output)
-        if len(text) > FALLBACK_TEXT_MAX_LEN:
-            text = text[:FALLBACK_TEXT_MAX_LEN] + "..."
+    elif output:
+        # AgentFinish — the agent produced a final answer
+        text = str(output)
+        if len(text) > RESULT_PREVIEW_MAX_LEN:
+            text = text[:RESULT_PREVIEW_MAX_LEN] + "..."
         event = ThoughtEvent(run_id=run_id, agent_name=agent_name, thought=text)
         manager.update_run_state(thought={"type": "thought", "agent_name": agent_name, "preview": text[:PREVIEW_MAX_LEN]})
+    else:
+        # Last resort — try to extract something useful from the raw object
+        # Check for common CrewAI attributes we may have missed
+        raw = str(step_output)
+        # Strip the class wrapper if it looks like repr (e.g. "AgentFinish(thought='', ...)")
+        for attr_name in ("text", "content", "message", "response"):
+            val = getattr(step_output, attr_name, None)
+            if val and isinstance(val, str) and len(val) > 0:
+                raw = val
+                break
+        if len(raw) > FALLBACK_TEXT_MAX_LEN:
+            raw = raw[:FALLBACK_TEXT_MAX_LEN] + "..."
+        event = ThoughtEvent(run_id=run_id, agent_name=agent_name, thought=raw)
+        manager.update_run_state(thought={"type": "thought", "agent_name": agent_name, "preview": raw[:PREVIEW_MAX_LEN]})
 
-    text_for_estimate = str(thought or result or step_output)
-    token_tracker.add_estimate(agent_name, max(len(text_for_estimate) // 4, 1))
+    # Estimate tokens from the most specific text available.
+    # Avoid str(step_output) which can be very expensive for large CrewAI objects.
+    raw_text = thought or output or result
+    if raw_text is not None:
+        estimate_len = len(str(raw_text))
+    else:
+        estimate_len = 100  # conservative fallback instead of stringifying the full object
+    token_tracker.add_estimate(agent_name, max(estimate_len // 4, 1))
     manager.sync_broadcast(
         TokenUsageEvent(
             run_id=run_id,

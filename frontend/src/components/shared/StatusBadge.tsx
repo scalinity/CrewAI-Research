@@ -30,7 +30,7 @@ export function StatusBadge({ status }: { status: Status }) {
     <span
       role="status"
       aria-label={`Status: ${label}`}
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${style}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-medium uppercase tracking-wider ${style}`}
     >
       {label}
     </span>

@@ -19,7 +19,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
-    load_dotenv()
+    load_dotenv(override=True)
+    # CrewAI's Google GenAI provider looks for GEMINI_API_KEY, not GOOGLE_API_KEY
+    import os
+    if os.environ.get("GOOGLE_API_KEY") and not os.environ.get("GEMINI_API_KEY"):
+        os.environ["GEMINI_API_KEY"] = os.environ["GOOGLE_API_KEY"]
     manager.set_loop(asyncio.get_running_loop())
     manager.start_background_tasks()
     Path("logs").mkdir(exist_ok=True)

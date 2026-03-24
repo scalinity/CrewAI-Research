@@ -113,7 +113,7 @@ export type CrewEvent =
 
 export type AgentStatus = "idle" | "thinking" | "tool_call" | "done" | "error";
 export type TaskStatus = "pending" | "active" | "done" | "error";
-export type CrewStatus = "idle" | "running" | "complete" | "error";
+export type CrewStatus = "idle" | "running" | "complete" | "error" | "cancelled";
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
 export interface AgentState {

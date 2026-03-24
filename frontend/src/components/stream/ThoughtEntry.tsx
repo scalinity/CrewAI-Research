@@ -25,22 +25,28 @@ const TYPE_BADGES: Record<string, { label: string; style: string }> = {
 export const ThoughtEntry = memo(function ThoughtEntry({
   entry,
   agentIndex,
+  isLatest,
 }: {
   entry: ThoughtEntryData;
   agentIndex: number;
+  isLatest?: boolean;
 }) {
   const badge = TYPE_BADGES[entry.type] ?? TYPE_BADGES.thought;
   const agentColor = AGENT_COLORS[agentIndex % 3] ?? "text-text-secondary";
   const isToolType = entry.type === "tool_call" || entry.type === "tool_result";
 
+  // Only animate the most recent entry to avoid 500 Framer animation instances in memory.
+  const Wrapper = isLatest ? motion.div : "div";
+  const motionProps = isLatest
+    ? { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.15 } }
+    : {};
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.15 }}
+    <Wrapper
+      {...motionProps}
       className="flex gap-2 py-1.5 px-3 hover:bg-bg-panel/50 rounded transition-colors"
     >
-      <span className="font-mono text-[10px] text-text-secondary/60 shrink-0 pt-0.5 w-[52px]">
+      <span className="font-mono text-[10px] text-text-secondary shrink-0 pt-0.5 w-[52px]">
         {formatTimestamp(entry.timestamp)}
       </span>
 
@@ -68,6 +74,6 @@ export const ThoughtEntry = memo(function ThoughtEntry({
           </div>
         )}
       </div>
-    </motion.div>
+    </Wrapper>
   );
 });

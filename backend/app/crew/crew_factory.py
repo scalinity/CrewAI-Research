@@ -2,18 +2,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import time
 from typing import TYPE_CHECKING
 
 from crewai import Crew, LLM, Process
 
 from ..config import get_thinking_params, settings
-from ..event_types import CrewCompleteEvent, CrewStartEvent, ErrorEvent
+from ..event_types import AgentStartEvent, CrewCompleteEvent, CrewStartEvent, ErrorEvent
 from ..utils.event_logger import EventLogger
 from ..utils.token_tracker import TokenTracker
 from .agents import create_agents
-from .callbacks import make_step_callback_factory, make_task_callback
+from .callbacks import CrewCancelledError, make_step_callback_factory, make_task_callback
 from .tasks import create_tasks
+from .tool_listener import ToolEventListener
 from .tools import create_tools
 
 if TYPE_CHECKING:
@@ -30,6 +32,7 @@ async def execute_crew(
     manager: ConnectionManager,
     model_override: str | None = None,
     thinking_level: str = "off",
+    cancel_event: threading.Event | None = None,
 ) -> None:
     model_name = model_override or settings.MODEL_NAME
     event_logger = EventLogger(run_id)
@@ -38,11 +41,14 @@ async def execute_crew(
     token_tracker = TokenTracker(model_name)
 
     thinking_params = get_thinking_params(model_name, thinking_level)
-    llm = LLM(model=model_name, **thinking_params)
+    llm = LLM(model=model_name, max_completion_tokens=4096, **thinking_params)
     logger.info("Using model=%s thinking_level=%s params=%s", model_name, thinking_level, thinking_params)
 
     task_start_times: dict[str, float] = {}
-    cb_factory = make_step_callback_factory(manager, run_id, token_tracker, task_start_times)
+    cb_factory = make_step_callback_factory(
+        manager, run_id, token_tracker, task_start_times,
+        pre_started_agents={AGENT_NAMES[0]}, cancel_event=cancel_event,
+    )
     task_cb = make_task_callback(manager, run_id, token_tracker, task_start_times)
 
     tools = create_tools()
@@ -55,6 +61,7 @@ async def execute_crew(
         process=Process.sequential,
         verbose=True,
         memory=False,
+        max_rpm=30,
         task_callback=task_cb,
     )
 
@@ -70,14 +77,32 @@ async def execute_crew(
         status="running",
         run_id=run_id,
         topic=topic,
-        agents=[{"name": n, "status": "idle"} for n in AGENT_NAMES],
+        agents=[
+            {"name": AGENT_NAMES[0], "status": "thinking"},
+            {"name": AGENT_NAMES[1], "status": "idle"},
+            {"name": AGENT_NAMES[2], "status": "idle"},
+        ],
         tasks=[
-            {"description": "Research", "agent": AGENT_NAMES[0], "status": "pending"},
+            {"description": "Research", "agent": AGENT_NAMES[0], "status": "active"},
             {"description": "Write", "agent": AGENT_NAMES[1], "status": "pending"},
             {"description": "Review", "agent": AGENT_NAMES[2], "status": "pending"},
         ],
         metrics={"totalTokens": 0, "estimatedCost": 0.0},
     )
+
+    # Emit AgentStartEvent immediately so the UI shows the first agent as active
+    # before any step callbacks fire (CrewAI doesn't callback until after the first LLM response)
+    manager.sync_broadcast(
+        AgentStartEvent(
+            run_id=run_id,
+            agent_name=AGENT_NAMES[0],
+            agent_role=AGENT_NAMES[0],
+            task_description=f"Research: {topic}",
+        )
+    )
+
+    # Register tool event listener to capture tool calls via CrewAI's event bus
+    _tool_listener = ToolEventListener(manager, run_id)
 
     # Timeout: 10 minutes max for crew execution
     CREW_TIMEOUT_SECONDS = 600
@@ -114,10 +139,27 @@ async def execute_crew(
                 "durationMs": duration_ms,
             },
         )
-        manager.update_run_state(status="complete")
         logger.info("Crew run %s completed in %.1fs", run_id, duration_ms / 1000)
 
+    except (asyncio.CancelledError, CrewCancelledError):
+        # CancelledError: asyncio task was cancelled from outside
+        # CrewCancelledError: cancel_event was set, caught by step callback inside the thread
+        if cancel_event is not None:
+            cancel_event.set()  # ensure the event is set so any remaining callbacks also abort
+        duration_ms = (time.time() - start) * 1000
+        logger.info("Crew run %s cancelled after %.1fs", run_id, duration_ms / 1000)
+        manager.sync_broadcast(
+            ErrorEvent(
+                run_id=run_id,
+                agent_name=None,
+                error_message="Crew execution was cancelled",
+                error_type="CancelledError",
+            )
+        )
+        manager.update_run_state(status="cancelled")
     except asyncio.TimeoutError:
+        if cancel_event is not None:
+            cancel_event.set()  # signal the thread to stop at the next step callback
         duration_ms = (time.time() - start) * 1000
         logger.error("Crew run %s timed out after %.1fs", run_id, duration_ms / 1000)
         manager.sync_broadcast(
@@ -129,7 +171,6 @@ async def execute_crew(
             )
         )
         manager.update_run_state(status="error")
-        manager.update_run_state(status="error")
     except Exception as e:
         logger.exception("Crew run %s failed: %s", run_id, e)
         manager.sync_broadcast(
@@ -140,7 +181,6 @@ async def execute_crew(
                 error_type=type(e).__name__,
             )
         )
-        manager.update_run_state(status="error")
         manager.update_run_state(status="error")
     finally:
         event_logger.close()
