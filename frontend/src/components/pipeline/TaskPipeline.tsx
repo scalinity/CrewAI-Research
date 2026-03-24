@@ -1,7 +1,8 @@
+import { memo } from "react";
 import type { TaskState } from "@/types/events";
 import { PipelineStep } from "./PipelineStep";
 
-export function TaskPipeline({ tasks }: { tasks: TaskState[] }) {
+export const TaskPipeline = memo(function TaskPipeline({ tasks }: { tasks: TaskState[] }) {
   if (tasks.length === 0) return null;
 
   return (
@@ -11,4 +12,4 @@ export function TaskPipeline({ tasks }: { tasks: TaskState[] }) {
       ))}
     </div>
   );
-}
+});

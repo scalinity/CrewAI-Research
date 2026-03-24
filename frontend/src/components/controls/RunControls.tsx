@@ -70,7 +70,7 @@ export function RunControls({
 
   return (
     <div className="flex items-center gap-2 flex-1 max-w-2xl">
-      <TopicInput value={topic} onChange={setTopic} disabled={isRunning} />
+      <TopicInput value={topic} onChange={setTopic} onSubmit={handleSubmit} disabled={isRunning} />
 
       <CustomSelect
         value={selectedModel}

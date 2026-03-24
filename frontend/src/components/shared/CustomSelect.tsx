@@ -9,6 +9,8 @@ export interface SelectOption {
   description?: string;
 }
 
+let selectIdCounter = 0;
+
 export function CustomSelect({
   value,
   options,
@@ -29,6 +31,8 @@ export function CustomSelect({
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const idRef = useRef(`cs-${++selectIdCounter}`);
+  const listboxId = `${idRef.current}-listbox`;
   const selectedOption = options.find((o) => o.value === value);
 
   const close = useCallback(() => {
@@ -107,6 +111,8 @@ export function CustomSelect({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={open ? listboxId : undefined}
+        aria-activedescendant={open && focusedIndex >= 0 ? `${idRef.current}-opt-${focusedIndex}` : undefined}
         className={`
           flex items-center gap-1.5 w-full
           bg-bg-primary border border-border rounded px-2.5 py-1.5
@@ -121,7 +127,7 @@ export function CustomSelect({
         <span className="truncate flex-1 text-left">{selectedOption?.label ?? value}</span>
         <ChevronDown
           size={10}
-          className={`shrink-0 text-text-secondary/50 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-text-secondary transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -133,8 +139,10 @@ export function CustomSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.12 }}
+            id={listboxId}
             role="listbox"
             aria-label={ariaLabel}
+            onMouseDown={(e) => e.preventDefault()}
             className="absolute top-full left-0 right-0 mt-1 z-50 bg-bg-panel border border-border rounded overflow-hidden py-1 min-w-[160px]"
           >
             {options.map((option, i) => {
@@ -145,6 +153,7 @@ export function CustomSelect({
                   key={option.value}
                   type="button"
                   role="option"
+                  id={`${idRef.current}-opt-${i}`}
                   aria-selected={isSelected}
                   onMouseEnter={() => setFocusedIndex(i)}
                   onClick={() => handleSelect(option.value)}
@@ -159,7 +168,7 @@ export function CustomSelect({
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{option.label}</div>
                     {option.description && (
-                      <div className="text-[9px] text-text-secondary/50 truncate">{option.description}</div>
+                      <div className="text-[9px] text-text-secondary truncate">{option.description}</div>
                     )}
                   </div>
                   {isSelected && <Check size={12} className="shrink-0 text-accent" aria-hidden="true" />}

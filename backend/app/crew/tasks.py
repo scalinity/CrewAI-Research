@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 from crewai import Agent, Task
 
 from .output_models import ResearchBrief
@@ -11,13 +13,22 @@ def create_tasks(
     editor: Agent,
     topic: str,
 ) -> tuple[Task, Task, Task]:
+    today = date.today().strftime("%B %d, %Y")
+    year = date.today().year
+
     research_task = Task(
         description=(
-            f"Research the topic: '{topic}'. "
-            "Find 3-5 high-quality, recent sources. Identify key findings, "
-            "emerging trends, and knowledge gaps. Provide source URLs for every claim."
+            f"Research the topic: '{topic}'. Today's date is {today}. "
+            f"IMPORTANT: Your first action MUST be to use the SerperDevTool to search the web. "
+            f"Include '{year}' in your search queries to get the most current results. "
+            "Make at least 2 separate searches with different queries to get broad coverage. "
+            "Do NOT write your response until you have search results. "
+            "Do NOT use your training data as a primary source — it may be outdated. "
+            "Prioritize sources from the last 3 months. Discard results older than 6 months "
+            "unless they are foundational. After gathering search results, synthesize the "
+            "findings into a research brief with key findings, source URLs, and knowledge gaps."
         ),
-        expected_output="Structured research brief with key findings, sources with URLs, and knowledge gaps",
+        expected_output="Research brief with key findings from web search, source URLs, and knowledge gaps",
         agent=researcher,
         output_pydantic=ResearchBrief,
     )

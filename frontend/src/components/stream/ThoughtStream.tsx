@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from "react";
+import { memo, useRef, useCallback, useEffect } from "react";
 import type { ThoughtEntryData } from "@/types/events";
 import { ThoughtEntry } from "./ThoughtEntry";
 
@@ -9,7 +9,7 @@ function getAgentIndex(name: string): number {
   return idx >= 0 ? idx : 0;
 }
 
-export function ThoughtStream({ thoughts }: { thoughts: ThoughtEntryData[] }) {
+export const ThoughtStream = memo(function ThoughtStream({ thoughts, finalOutput, crewStatus }: { thoughts: ThoughtEntryData[]; finalOutput: string; crewStatus: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isAutoScrolling = useRef(true);
 
@@ -41,12 +41,12 @@ export function ThoughtStream({ thoughts }: { thoughts: ThoughtEntryData[] }) {
     >
       {thoughts.length === 0 && (
         <div className="flex items-center justify-center h-full">
-          <p className="text-text-secondary/60 text-[13px] font-display">
+          <p className="text-text-secondary text-[13px] font-display">
             Waiting for agent activity...
           </p>
         </div>
       )}
-      {thoughts.map((entry) => {
+      {thoughts.map((entry, i) => {
         const showSeparator = entry.agent_name !== lastAgent && entry.type !== "agent_start";
         lastAgent = entry.agent_name;
 
@@ -55,16 +55,30 @@ export function ThoughtStream({ thoughts }: { thoughts: ThoughtEntryData[] }) {
             {showSeparator && lastAgent && (
               <div className="flex items-center gap-2 px-3 py-1 mt-1">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[9px] text-text-secondary/60 uppercase tracking-wider font-display">
+                <span className="text-[9px] text-text-secondary uppercase tracking-wider font-mono">
                   {entry.agent_name}
                 </span>
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
-            <ThoughtEntry entry={entry} agentIndex={getAgentIndex(entry.agent_name)} />
+            <ThoughtEntry entry={entry} agentIndex={getAgentIndex(entry.agent_name)} isLatest={i === thoughts.length - 1} />
           </div>
         );
       })}
+
+      {crewStatus === "complete" && finalOutput && (
+        <div className="mx-3 my-3 rounded border border-success/30 bg-success/5 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full bg-success" />
+            <span className="text-[11px] font-mono uppercase tracking-wider text-success font-semibold">
+              Final Report
+            </span>
+          </div>
+          <div className="font-mono text-[12px] text-text-primary/90 leading-relaxed whitespace-pre-wrap">
+            {finalOutput}
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+});

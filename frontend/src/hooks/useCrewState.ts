@@ -10,6 +10,7 @@ import type {
 } from "@/types/events";
 
 const MAX_THOUGHTS = 500;
+const MAX_TOOL_CALLS = 100;
 
 export interface CrewState {
   crewStatus: CrewStatus;
@@ -22,6 +23,7 @@ export interface CrewState {
   toolCalls: ToolCallState[];
   thoughts: ThoughtEntryData[];
   finalOutput: string;
+  nextThoughtId: number;
 }
 
 const initialState: CrewState = {
@@ -35,17 +37,17 @@ const initialState: CrewState = {
   toolCalls: [],
   thoughts: [],
   finalOutput: "",
+  nextThoughtId: 1,
 };
 
 type Action = { type: "CREW_EVENT"; event: CrewEvent } | { type: "RESET" };
 
 const TASK_LABELS = ["Research", "Write", "Review"];
 
-// Derive thought IDs from state to keep the reducer pure (no external side effects).
-// A module-level counter would be incremented multiple times in React StrictMode's
-// double-invocation of reducers, causing ID gaps and non-deterministic behavior.
+// Derive thought IDs from a monotonic counter in state to keep the reducer pure.
+// Using thoughts.length would cause ID collisions after addThought trims old entries.
 function nextId(state: CrewState): string {
-  return String(state.thoughts.length + 1);
+  return String(state.nextThoughtId);
 }
 
 function crewReducer(state: CrewState, action: Action): CrewState {
@@ -83,6 +85,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
     case "agent_start":
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         agents: state.agents.map((a) =>
           a.name === event.agent_name ? { ...a, status: "thinking" } : a
         ),
@@ -101,6 +104,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
     case "thought":
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         agents: state.agents.map((a) =>
           a.name === event.agent_name
             ? { ...a, status: "thinking", lastThought: event.thought, currentTool: null }
@@ -119,14 +123,13 @@ function crewReducer(state: CrewState, action: Action): CrewState {
       const tcId = nextId(state);
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         agents: state.agents.map((a) =>
           a.name === event.agent_name
             ? { ...a, status: "tool_call", currentTool: event.tool_name }
             : a
         ),
-        toolCalls: [
-          ...state.toolCalls,
-          {
+        toolCalls: addToolCall(state.toolCalls, {
             id: tcId,
             name: event.tool_name,
             agent: event.agent_name,
@@ -135,8 +138,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
             latency_ms: 0,
             status: "pending",
             timestamp: event.timestamp,
-          },
-        ],
+          }),
         thoughts: addThought(state.thoughts, {
           id: tcId,
           type: "tool_call",
@@ -152,6 +154,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
     case "tool_result":
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         agents: state.agents.map((a) =>
           a.name === event.agent_name
             ? { ...a, status: "thinking", currentTool: null }
@@ -173,6 +176,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
     case "task_complete":
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         agents: state.agents.map((a) =>
           a.name === event.agent_name ? { ...a, status: "done", currentTool: null } : a
         ),
@@ -240,6 +244,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
     case "delegation":
       return {
         ...state,
+        nextThoughtId: state.nextThoughtId + 1,
         thoughts: addThought(state.thoughts, {
           id: nextId(state),
           type: "delegation",
@@ -253,6 +258,7 @@ function crewReducer(state: CrewState, action: Action): CrewState {
       return {
         ...state,
         crewStatus: "error",
+        nextThoughtId: state.nextThoughtId + 1,
         thoughts: addThought(state.thoughts, {
           id: nextId(state),
           type: "error",
@@ -312,15 +318,23 @@ function updateFirstPendingToolCall(
 }
 
 function addThought(thoughts: ThoughtEntryData[], entry: ThoughtEntryData): ThoughtEntryData[] {
-  if (thoughts.length >= 500) {
+  if (thoughts.length >= MAX_THOUGHTS) {
     // Drop the oldest 50 entries in bulk to avoid trimming on every single event
-    const trimmed = thoughts.slice(-449);
+    const BULK_DROP = 50;
+    const trimmed = thoughts.slice(-(MAX_THOUGHTS - BULK_DROP - 1));
     trimmed.push(entry);
     return trimmed;
   }
-  // Avoid spread: push into a new array reference (concat is optimized in V8)
-  const next = thoughts.concat(entry);
-  return next;
+  return thoughts.concat(entry);
+}
+
+function addToolCall(toolCalls: ToolCallState[], entry: ToolCallState): ToolCallState[] {
+  if (toolCalls.length >= MAX_TOOL_CALLS) {
+    const trimmed = toolCalls.slice(-(MAX_TOOL_CALLS - 10));
+    trimmed.push(entry);
+    return trimmed;
+  }
+  return toolCalls.concat(entry);
 }
 
 export function useCrewState() {

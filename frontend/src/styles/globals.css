@@ -94,7 +94,7 @@ html, body, #root {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 13px;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   text-decoration: none;
 }
 
@@ -131,7 +131,13 @@ html, body, #root {
 
 /* Responsive layout for smaller Electron windows */
 @media (max-width: 1024px) {
-  .grid-cols-\[240px_1fr_260px\] {
+  .dashboard-grid {
     grid-template-columns: 200px 1fr 220px;
+  }
+}
+
+@media (max-width: 860px) {
+  .dashboard-grid {
+    grid-template-columns: 180px 1fr 180px;
   }
 }
